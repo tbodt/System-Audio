@@ -6,9 +6,29 @@
 	objectVersion = 50;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		BB034F38263BABB50000A498 /* SystemAudio.m in Sources */ = {isa = PBXBuildFile; fileRef = BB034F37263BABB50000A498 /* SystemAudio.m */; };
+		BB034F3D263BABCA0000A498 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB034F3C263BABCA0000A498 /* CoreAudio.framework */; };
+		BB30BE812648C05F00260EA7 /* libbsm.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BB30BE802648C02300260EA7 /* libbsm.tbd */; };
+		BB30BE852648D51300260EA7 /* AudioContext.m in Sources */ = {isa = PBXBuildFile; fileRef = BB30BE842648D51300260EA7 /* AudioContext.m */; };
+		BBCCD729265AC133007C3BB4 /* Hooks.m in Sources */ = {isa = PBXBuildFile; fileRef = BBCCD728265AC133007C3BB4 /* Hooks.m */; };
+		BBCCD72C265AD43D007C3BB4 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBCCD72B265AD43D007C3BB4 /* AudioToolbox.framework */; };
+		BBCCD7B6265B76F1007C3BB4 /* TPCircularBuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = BBCCD7B5265B76F1007C3BB4 /* TPCircularBuffer.c */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		BB034F2D263BAB300000A498 /* System Audio.driver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "System Audio.driver"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB034F30263BAB300000A498 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BB034F37263BABB50000A498 /* SystemAudio.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SystemAudio.m; sourceTree = "<group>"; };
+		BB034F3C263BABCA0000A498 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		BB30BE802648C02300260EA7 /* libbsm.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libbsm.tbd; path = usr/lib/libbsm.tbd; sourceTree = SDKROOT; };
+		BB30BE832648D51300260EA7 /* AudioContext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AudioContext.h; sourceTree = "<group>"; };
+		BB30BE842648D51300260EA7 /* AudioContext.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AudioContext.m; sourceTree = "<group>"; };
+		BB3FE52C266DE16700E75E21 /* SystemAudio.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SystemAudio.h; sourceTree = "<group>"; };
+		BBCCD728265AC133007C3BB4 /* Hooks.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Hooks.m; sourceTree = "<group>"; };
+		BBCCD72B265AD43D007C3BB4 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		BBCCD7B4265B76E9007C3BB4 /* TPCircularBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TPCircularBuffer.h; sourceTree = "<group>"; };
+		BBCCD7B5265B76F1007C3BB4 /* TPCircularBuffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TPCircularBuffer.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -16,6 +36,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BB034F3D263BABCA0000A498 /* CoreAudio.framework in Frameworks */,
+				BB30BE812648C05F00260EA7 /* libbsm.tbd in Frameworks */,
+				BBCCD72C265AD43D007C3BB4 /* AudioToolbox.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -27,6 +50,7 @@
 			children = (
 				BB034F2F263BAB300000A498 /* System Audio */,
 				BB034F2E263BAB300000A498 /* Products */,
+				BB034F3B263BABCA0000A498 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -41,9 +65,26 @@
 		BB034F2F263BAB300000A498 /* System Audio */ = {
 			isa = PBXGroup;
 			children = (
+				BB3FE52C266DE16700E75E21 /* SystemAudio.h */,
+				BB034F37263BABB50000A498 /* SystemAudio.m */,
+				BBCCD728265AC133007C3BB4 /* Hooks.m */,
+				BB30BE832648D51300260EA7 /* AudioContext.h */,
+				BB30BE842648D51300260EA7 /* AudioContext.m */,
 				BB034F30263BAB300000A498 /* Info.plist */,
+				BBCCD7B4265B76E9007C3BB4 /* TPCircularBuffer.h */,
+				BBCCD7B5265B76F1007C3BB4 /* TPCircularBuffer.c */,
 			);
 			path = "System Audio";
+			sourceTree = "<group>";
+		};
+		BB034F3B263BABCA0000A498 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				BBCCD72B265AD43D007C3BB4 /* AudioToolbox.framework */,
+				BB30BE802648C02300260EA7 /* libbsm.tbd */,
+				BB034F3C263BABCA0000A498 /* CoreAudio.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -112,6 +153,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBCCD729265AC133007C3BB4 /* Hooks.m in Sources */,
+				BB30BE852648D51300260EA7 /* AudioContext.m in Sources */,
+				BBCCD7B6265B76F1007C3BB4 /* TPCircularBuffer.c in Sources */,
+				BB034F38263BABB50000A498 /* SystemAudio.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -232,14 +277,14 @@
 		BB034F34263BAB300000A498 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = CK5SXRTBR7;
 				INFOPLIST_FILE = "System Audio/Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Audio/Plug-Ins/HAL";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.tbodt.System-Audio";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				WRAPPER_EXTENSION = driver;
 			};
 			name = Debug;
@@ -247,14 +292,14 @@
 		BB034F35263BAB300000A498 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = CK5SXRTBR7;
 				INFOPLIST_FILE = "System Audio/Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Audio/Plug-Ins/HAL";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.tbodt.System-Audio";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				WRAPPER_EXTENSION = driver;
 			};
 			name = Release;
