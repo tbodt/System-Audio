@@ -6,6 +6,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <AudioToolbox/AudioToolbox.h>
 #import <stdatomic.h>
 #import "TPCircularBuffer.h"
 
@@ -31,6 +32,8 @@ __BEGIN_DECLS
     UInt32 head_sample_time; // consumer only
     UInt32 tail_sample_time; // producer only
     TPCircularBuffer ring;
+    
+    AudioConverterRef converter;
 }
 @end
 

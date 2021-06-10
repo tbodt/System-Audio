@@ -6,6 +6,7 @@
 //
 
 #import <CoreAudio/CoreAudio.h>
+#import <AudioToolbox/AudioToolbox.h>
 #import <sys/stat.h>
 #import "SystemAudio.h"
 #import "AudioContext.h"
@@ -110,6 +111,8 @@ void handle_context_stop(unsigned ctxId) {
         ctx->running = false;
         ctx->sampleRate = 0;
         ctx->ring_active = false; // ugh this is probably racy af but I am tired and tsan doesn't work in coreaudio so no one has to know
+        AudioConverterDispose(ctx->converter);
+        ctx->converter = NULL;
         [contextsByPort removeObjectForKey:@(ctx->clientPort)];
         [contextsByPort removeObjectForKey:@(ctx->serverPort)];
         NSLog(@"systemaudio: linja li pini! id=%d", ctxId);

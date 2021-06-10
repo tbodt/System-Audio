@@ -155,7 +155,7 @@ struct AudioObject deviceObject = {
 
 static AudioStreamRangedDescription inputStreamFormats[1] = {{
     .mFormat = {
-        .mSampleRate = 48000,
+        .mSampleRate = sample_rate,
         .mFormatID = kAudioFormatLinearPCM,
         .mFormatFlags = kAudioFormatFlagIsFloat | kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked,
         .mBytesPerPacket = 8,
@@ -165,8 +165,8 @@ static AudioStreamRangedDescription inputStreamFormats[1] = {{
         .mBitsPerChannel = 32,
     },
     .mSampleRateRange = {
-        .mMinimum = 1.0,
-        .mMaximum = 1000000000.0,
+        .mMinimum = sample_rate,
+        .mMaximum = sample_rate,
     },
 }};
 struct AudioObject inputStreamObject = {
@@ -307,32 +307,103 @@ static OSStatus SystemAudio_EndIOOperation(AudioServerPlugInDriverRef inDriver, 
     return kAudioHardwareNoError;
 }
 
+struct provide_func_context {
+    TPCircularBuffer *ring;
+    uint32_t byte_offset;
+    uint32_t packet_size;
+    uint32_t num_channels;
+};
+
+OSStatus ProvideInputDataFromContext(AudioConverterRef inAudioConverter, UInt32 *ioNumberDataPackets, AudioBufferList *ioData, AudioStreamPacketDescription * _Nullable *outDataPacketDescription, void *inUserData) {
+    struct provide_func_context *ctx = inUserData;
+    uint32_t getBytes = *ioNumberDataPackets * ctx->packet_size;
+    uint32_t availableBytes;
+    void *tail = TPCircularBufferTail(ctx->ring, &availableBytes);
+    if (ctx->byte_offset > availableBytes) {
+        availableBytes = 0;
+    } else {
+        tail += ctx->byte_offset;
+        availableBytes -= ctx->byte_offset;
+    }
+    if (getBytes > availableBytes)
+        getBytes = availableBytes;
+    getBytes -= getBytes % ctx->packet_size;
+    *ioNumberDataPackets = getBytes / ctx->packet_size;
+    ioData->mNumberBuffers = 1;
+    ioData->mBuffers[0].mData = tail;
+    ioData->mBuffers[0].mDataByteSize = getBytes;
+    ioData->mBuffers[0].mNumberChannels = ctx->num_channels;
+    NSLog(@"systemaudio ProvideInputDataFromContext numberdatapackets=%d data=%p databytesize=%d numberchannels=%d byteoffset=%d", *ioNumberDataPackets, ioData->mBuffers[0].mData, ioData->mBuffers[0].mDataByteSize, ioData->mBuffers[0].mNumberChannels, ctx->byte_offset);
+    ctx->byte_offset += getBytes;
+    return getBytes != 0 ? 0 : -1;
+}
+
 static OSStatus SystemAudio_DoIOOperation(AudioServerPlugInDriverRef inDriver, AudioObjectID inDeviceObjectID, AudioObjectID inStreamObjectID, UInt32 inClientID, UInt32 inOperationID, UInt32 inIOBufferFrameSize, const AudioServerPlugInIOCycleInfo *inIOCycleInfo, void *ioMainBuffer, void *ioSecondaryBuffer) {
     if (inStreamObjectID != kAudioObject_InputStream)
         return kAudioHardwareBadObjectError;
-    NSLog(@"%s %u %u %llu %f %f", __FUNCTION__, inIOBufferFrameSize, inIOCycleInfo->mNominalIOBufferFrameSize, inIOCycleInfo->mIOCycleCounter, inIOCycleInfo->mInputTime.mSampleTime, inIOCycleInfo->mDeviceHostTicksPerFrame);
+    NSLog(@"%s %u %u %llu %f %f %p", __FUNCTION__, inIOBufferFrameSize, inIOCycleInfo->mNominalIOBufferFrameSize, inIOCycleInfo->mIOCycleCounter, inIOCycleInfo->mInputTime.mSampleTime, inIOCycleInfo->mDeviceHostTicksPerFrame, ioMainBuffer);
     
     int channels = inputStreamFormats[0].mFormat.mChannelsPerFrame;
     uint32_t wantBytes = inIOBufferFrameSize * channels * sizeof(Float32);
     memset(ioMainBuffer, 0, wantBytes);
+    
+    static __thread void *tempBuffer;
+    static __thread uint32_t tempBufferSize;
+    if (tempBufferSize < wantBytes) {
+        NSLog(@"systemaudio: mi suli %u e lipu pi tenpo lili", wantBytes);
+        tempBufferSize = wantBytes;
+        munmap(tempBuffer, tempBufferSize);
+        tempBuffer = mmap(NULL, tempBufferSize, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+    }
+    
     // TODO: sync streams from the same device, or just, like, sync shit at all
     enumerate_contexts(^(AudioContext * _Nonnull ctx) {
-        if (sample_rate != ctx->sampleRate) {
-            NSLog(@"systemaudio: linja %d la tenpo li ante, tenpo ona li %f, tenpo mi li %d, ni la mi ala, TEKA la o ante e tenpo", ctx->ctxId, ctx->sampleRate, sample_rate);
+        if (ctx->converter == NULL) {
+            AudioStreamBasicDescription fmt = {
+                .mSampleRate = ctx->sampleRate,
+                .mFormatID = kAudioFormatLinearPCM,
+                .mFormatFlags = kAudioFormatFlagIsFloat | kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked,
+                .mBytesPerPacket = sizeof(Float32) * ctx->stream0Channels,
+                .mFramesPerPacket = 1,
+                .mBytesPerFrame = sizeof(Float32) * ctx->stream0Channels,
+                .mChannelsPerFrame = ctx->stream0Channels,
+                .mBitsPerChannel = 32,
+            };
+            OSStatus err = AudioConverterNew(&fmt, &inputStreamFormats[0].mFormat, &ctx->converter);
+            if (err != 0) {
+                NSLog(@"systemaudio: pali pi ilo ante kalama li pakala ni: %d", err);
+                return;
+            }
+        }
+        
+        AudioBufferList converterOut = {
+            .mNumberBuffers = 1,
+            .mBuffers = {
+                {
+                    .mNumberChannels = 2,
+                    .mDataByteSize = wantBytes,
+                    .mData = tempBuffer,
+                },
+            },
+        };
+        UInt32 packets = inIOBufferFrameSize;
+        struct provide_func_context pctx = {
+            .ring = &ctx->ring,
+            .packet_size = sizeof(Float32) * ctx->stream0Channels,
+            .num_channels = ctx->stream0Channels,
+        };
+        OSStatus err = AudioConverterFillComplexBuffer(ctx->converter, ProvideInputDataFromContext, &pctx, &packets, &converterOut, NULL);
+        if (err != 0) {
+            NSLog(@"systemaudio: ante kalama li pakala ni: %d", err);
             return;
         }
-        if (ctx->stream0Channels != channels) {
-            NSLog(@"systemaudio: linja %d la mute linja li ante, mute ona li %d, mute mi li %d, ni la mi ala, TEKA la o ante e mute", ctx->ctxId, ctx->stream0Channels, inputStreamFormats[0].mFormat.mChannelsPerFrame);
+        if (packets < inIOBufferFrameSize) {
+            NSLog(@"systemaudio: pakala la kalama lili taso li kama tan ilo ante kalama! mi wile e kalama %u li jo e kalama %u", inIOBufferFrameSize, packets);
             return;
         }
-        uint32_t getBytes = wantBytes;
-        uint32_t availableBytes;
-        void *tail = TPCircularBufferTail(&ctx->ring, &availableBytes);
-        if (getBytes > availableBytes)
-            getBytes = availableBytes;
-        getBytes -= getBytes % (channels * sizeof(Float32));
-        vDSP_vadd(tail, 1, ioMainBuffer, 1, ioMainBuffer, 1, getBytes / sizeof(Float32));
-        TPCircularBufferConsume(&ctx->ring, getBytes);
+        vDSP_vadd(tempBuffer, 1, ioMainBuffer, 1, ioMainBuffer, 1, packets * ctx->stream0Channels);
+        NSLog(@"systemaudio: mi o moku e %d", pctx.byte_offset);
+        TPCircularBufferConsume(&ctx->ring, pctx.byte_offset);
     });
     
 //    // 1khz test tone
