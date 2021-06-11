@@ -205,12 +205,12 @@ static Boolean SystemAudio_HasProperty(AudioServerPlugInDriverRef inDriver, Audi
     struct AudioObject *obj = Object_GetByID(inObjectID);
     Boolean has = obj != NULL && Object_GetPropertyDesc(obj, inAddress) != NULL;
     if (!has) {
-        NSLog(@"%s %d %d %s,%s,%d ala a", __FUNCTION__, inObjectID, inClientProcessID, FourCCToCString(inAddress->mSelector), FourCCToCString(inAddress->mScope), inAddress->mElement);
+//        NSLog(@"%s %d %d %s,%s,%d ala a", __FUNCTION__, inObjectID, inClientProcessID, FourCCToCString(inAddress->mSelector), FourCCToCString(inAddress->mScope), inAddress->mElement);
     }
     return has;
 }
 static OSStatus SystemAudio_IsPropertySettable(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress, Boolean *outIsSettable) {
-    NSLog(@"%s %d %d %s,%s,%d", __FUNCTION__, inObjectID, inClientProcessID, FourCCToCString(inAddress->mSelector), FourCCToCString(inAddress->mScope), inAddress->mElement);
+//    NSLog(@"%s %d %d %s,%s,%d", __FUNCTION__, inObjectID, inClientProcessID, FourCCToCString(inAddress->mSelector), FourCCToCString(inAddress->mScope), inAddress->mElement);
     struct AudioObject *obj = Object_GetByID(inObjectID);
     if (obj == NULL)
         return kAudioHardwareBadObjectError;
@@ -222,7 +222,7 @@ static OSStatus SystemAudio_GetPropertyDataSize(AudioServerPlugInDriverRef inDri
         return kAudioHardwareBadObjectError;
     struct AudioPropertyDesc *prop = Object_GetPropertyDesc(obj, inAddress);
     if (prop == NULL) {
-        NSLog(@"%s %d %d %s,%s,%d ala a", __FUNCTION__, inObjectID, inClientProcessID, FourCCToCString(inAddress->mSelector), FourCCToCString(inAddress->mScope), inAddress->mElement);
+//        NSLog(@"%s %d %d %s,%s,%d ala a", __FUNCTION__, inObjectID, inClientProcessID, FourCCToCString(inAddress->mSelector), FourCCToCString(inAddress->mScope), inAddress->mElement);
         return kAudioHardwareUnknownPropertyError;
     }
     *outDataSize = prop->value_size;
@@ -234,7 +234,7 @@ static OSStatus SystemAudio_GetPropertyData(AudioServerPlugInDriverRef inDriver,
         return kAudioHardwareBadObjectError;
     struct AudioPropertyDesc *prop = Object_GetPropertyDesc(obj, inAddress);
     if (prop == NULL) {
-        NSLog(@"%s %d %d %s,%s,%d ala a", __FUNCTION__, inObjectID, inClientProcessID, FourCCToCString(inAddress->mSelector), FourCCToCString(inAddress->mScope), inAddress->mElement);
+//        NSLog(@"%s %d %d %s,%s,%d ala a", __FUNCTION__, inObjectID, inClientProcessID, FourCCToCString(inAddress->mSelector), FourCCToCString(inAddress->mScope), inAddress->mElement);
         return kAudioHardwareUnknownPropertyError;
     }
     if (inDataSize < prop->value_size)
@@ -244,7 +244,7 @@ static OSStatus SystemAudio_GetPropertyData(AudioServerPlugInDriverRef inDriver,
     return kAudioHardwareNoError;
 }
 static OSStatus SystemAudio_SetPropertyData(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress, UInt32 inQualifierDataSize, const void *inQualifierData, UInt32 inDataSize, const void *inData) {
-    NSLog(@"%s %d %d %s,%s,%d", __FUNCTION__, inObjectID, inClientProcessID, FourCCToCString(inAddress->mSelector), FourCCToCString(inAddress->mScope), inAddress->mElement);
+//    NSLog(@"%s %d %d %s,%s,%d", __FUNCTION__, inObjectID, inClientProcessID, FourCCToCString(inAddress->mSelector), FourCCToCString(inAddress->mScope), inAddress->mElement);
     struct AudioObject *obj = Object_GetByID(inObjectID);
     if (obj == NULL)
         return kAudioHardwareBadObjectError;
@@ -282,12 +282,12 @@ static OSStatus SystemAudio_GetZeroTimeStamp(AudioServerPlugInDriverRef inDriver
     *outHostTime = start + cycle_count * mach_ticks_per_zero_timestamp;
     *outSeed = 1;
 //    *outSampleTime /= 2;
-    NSLog(@"%s %f %llu", __FUNCTION__, *outSampleTime, *outHostTime);
+//    NSLog(@"%s %f %llu", __FUNCTION__, *outSampleTime, *outHostTime);
     return kAudioHardwareNoError;
 }
 
 static OSStatus SystemAudio_WillDoIOOperation(AudioServerPlugInDriverRef inDriver, AudioObjectID inDeviceObjectID, UInt32 inClientID, UInt32 inOperationID, Boolean *outWillDo, Boolean *outWillDoInPlace) {
-    NSLog(@"%s", __FUNCTION__);
+//    NSLog(@"%s", __FUNCTION__);
     switch (inOperationID) {
         case kAudioServerPlugInIOOperationReadInput:
             *outWillDo = true;
@@ -333,7 +333,7 @@ OSStatus ProvideInputDataFromContext(AudioConverterRef inAudioConverter, UInt32 
     ioData->mBuffers[0].mData = tail;
     ioData->mBuffers[0].mDataByteSize = getBytes;
     ioData->mBuffers[0].mNumberChannels = ctx->num_channels;
-    NSLog(@"systemaudio ProvideInputDataFromContext numberdatapackets=%d data=%p databytesize=%d numberchannels=%d byteoffset=%d", *ioNumberDataPackets, ioData->mBuffers[0].mData, ioData->mBuffers[0].mDataByteSize, ioData->mBuffers[0].mNumberChannels, ctx->byte_offset);
+//    NSLog(@"systemaudio ProvideInputDataFromContext numberdatapackets=%d data=%p databytesize=%d numberchannels=%d byteoffset=%d", *ioNumberDataPackets, ioData->mBuffers[0].mData, ioData->mBuffers[0].mDataByteSize, ioData->mBuffers[0].mNumberChannels, ctx->byte_offset);
     ctx->byte_offset += getBytes;
     return getBytes != 0 ? 0 : -1;
 }
@@ -341,7 +341,7 @@ OSStatus ProvideInputDataFromContext(AudioConverterRef inAudioConverter, UInt32 
 static OSStatus SystemAudio_DoIOOperation(AudioServerPlugInDriverRef inDriver, AudioObjectID inDeviceObjectID, AudioObjectID inStreamObjectID, UInt32 inClientID, UInt32 inOperationID, UInt32 inIOBufferFrameSize, const AudioServerPlugInIOCycleInfo *inIOCycleInfo, void *ioMainBuffer, void *ioSecondaryBuffer) {
     if (inStreamObjectID != kAudioObject_InputStream)
         return kAudioHardwareBadObjectError;
-    NSLog(@"%s %u %u %llu %f %f %p", __FUNCTION__, inIOBufferFrameSize, inIOCycleInfo->mNominalIOBufferFrameSize, inIOCycleInfo->mIOCycleCounter, inIOCycleInfo->mInputTime.mSampleTime, inIOCycleInfo->mDeviceHostTicksPerFrame, ioMainBuffer);
+//    NSLog(@"%s %u %u %llu %f %f %p", __FUNCTION__, inIOBufferFrameSize, inIOCycleInfo->mNominalIOBufferFrameSize, inIOCycleInfo->mIOCycleCounter, inIOCycleInfo->mInputTime.mSampleTime, inIOCycleInfo->mDeviceHostTicksPerFrame, ioMainBuffer);
     
     int channels = inputStreamFormats[0].mFormat.mChannelsPerFrame;
     uint32_t wantBytes = inIOBufferFrameSize * channels * sizeof(Float32);
@@ -402,7 +402,6 @@ static OSStatus SystemAudio_DoIOOperation(AudioServerPlugInDriverRef inDriver, A
             return;
         }
         vDSP_vadd(tempBuffer, 1, ioMainBuffer, 1, ioMainBuffer, 1, packets * ctx->stream0Channels);
-        NSLog(@"systemaudio: mi o moku e %d", pctx.byte_offset);
         TPCircularBufferConsume(&ctx->ring, pctx.byte_offset);
     });
     

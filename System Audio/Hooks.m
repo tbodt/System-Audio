@@ -13,6 +13,8 @@
 #import <dlfcn.h>
 #import "AudioContext.h"
 
+#define FourCCToCString(c) (char[]){ (char)((c)>>24), (char)((c)>>16), (char)((c)>>8), (char)(c), 0 }
+
 static NSString *hexdump(void *data, size_t size) {
     uint8_t *cdata = data;
     NSMutableString *str = [NSMutableString new];
@@ -108,6 +110,30 @@ static mach_msg_return_t hook_mig_callback(mach_msg_header_t *msg, mach_msg_head
             }
             NSLog(@"systemaudio: linja sin li kama! id=%d, pid=%d, sona=%@", resp->ctx_id, pid_from_mach_trailer(msg), plist);
             handle_context_config(resp->ctx_id, plist);
+        } break;
+        case 1010034: {
+            // example request:
+            // 0x2c:   0f010000
+            struct mig_request_System_SetPropertyData_DPlist {
+                mach_msg_header_t header;
+                // 0x18: 00000000
+                mach_msg_body_t body;
+                // 0x19: 00000000 00000000 01010001 00000000
+                mach_msg_ool_descriptor_t desc;
+                // 0x2c: 00000000 01000000
+                unsigned int unsure[2];
+                // 0x34: f2000000
+                unsigned int ctx_id;
+                // 0x38: 70757267 626f6c67 00000000
+                AudioObjectPropertyAddress prop;
+                unsigned int also_unsure;
+            };
+            struct mig_request_System_SetPropertyData_DPlist *req = (void *) msg;
+            NSLog(@"systemaudio: setpropertydatadplist %s", FourCCToCString(req->prop.mSelector));
+            if (req->prop.mSelector == kAudioAggregateDevicePropertyComposition) {
+                NSLog(@"systemaudio: set aggregate comp on %u to %@", req->ctx_id, plist);
+                handle_context_config(req->ctx_id, plist);
+            }
         } break;
         case 1010011:
             // IOContext_Start

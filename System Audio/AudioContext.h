@@ -37,6 +37,7 @@ __BEGIN_DECLS
 }
 @end
 
+void handle_aggregate_composition(unsigned dev, id plist);
 void handle_context_config(unsigned ctx, id plist);
 void handle_context_start(unsigned ctx, mach_port_t client, mach_port_t server);
 void handle_context_stop(unsigned ctx);

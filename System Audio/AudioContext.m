@@ -14,6 +14,7 @@
 static NSLock *contextsLock;
 static NSMutableDictionary<NSNumber *, AudioContext *> *contextsByID;
 static NSMutableDictionary<NSNumber *, AudioContext *> *contextsByPort;
+static NSMutableDictionary<NSNumber *, id> *acom;
 
 @implementation AudioContext
 - (int)openBuffer {
@@ -32,7 +33,7 @@ static NSMutableDictionary<NSNumber *, AudioContext *> *contextsByPort;
         return -1;
     }
     if (stream0Channels <= 0) {
-        NSLog(@"systemaudio: pakala a, mute kalama lon nasin nanpa wan li ala");
+        NSLog(@"systemaudio: pakala a, linja %d la mute kalama lon nasin nanpa wan li ala %d tan %@", ctxId, stream0Channels, config);
         errno = EINVAL;
         return -1; // otherwise would trip an assert in TPCircularBufferInit
     }
@@ -58,6 +59,7 @@ static NSMutableDictionary<NSNumber *, AudioContext *> *contextsByPort;
     contextsLock = [NSLock new];
     contextsByID = [NSMutableDictionary new];
     contextsByPort = [NSMutableDictionary new];
+    acom = [NSMutableDictionary new];
 }
 + (instancetype)contextById:(unsigned)ctxId {
     AudioContext *ctx = [contextsByID objectForKey:@(ctxId)];
@@ -73,11 +75,17 @@ static NSMutableDictionary<NSNumber *, AudioContext *> *contextsByPort;
 }
 @end
 
+void handle_aggregate_composition(unsigned dev, id plist) {
+    [contextsLock lock];
+    acom[plist] = @(dev);
+    [contextsLock unlock];
+}
+
 void handle_context_config(unsigned ctxId, id plist) {
     [contextsLock lock];
     AudioContext *ctx = [AudioContext contextById:ctxId];
     ctx->config = plist;
-    ctx->stream0Channels = [[[[plist objectForKey:@"grid-out"] objectAtIndex:0] objectForKey:@"channels"] intValue];
+    ctx->stream0Channels = [plist[@"grid-out"][0][@"channels"] intValue];
     [contextsLock unlock];
 }
 
@@ -95,8 +103,8 @@ void handle_context_start(unsigned ctxId, mach_port_t client, mach_port_t server
             [contextsLock unlock];
             return;
         }
-        [contextsByPort setObject:ctx forKey:@(ctx->clientPort)];
-        [contextsByPort setObject:ctx forKey:@(ctx->serverPort)];
+        contextsByPort[@(ctx->clientPort)] = ctx;
+        contextsByPort[@(ctx->serverPort)] = ctx;
         NSLog(@"systemaudio: linja li open! id=%d, client_port=%d, server_port=%d", ctxId, client, server);
     }
     [contextsLock unlock];
@@ -135,6 +143,11 @@ struct buffer_header {
 NSString *toki_e_tenpo(AudioTimeStamp tenpo) {
     return [NSString stringWithFormat:@"{%f %f}", tenpo.mSampleTime, tenpo.mHostTime / 1000000000.];
 }
+bool floats_equal(double a, double b) {
+    double diff = fabs(a - b);
+    double ulp = fabs(nextafter(a, b) - a);
+    return diff < 4*ulp;
+}
 void fetch_latest_audio(mach_port_t port, unsigned packet_id) {
     [contextsLock lock];
     AudioContext *ctx = [contextsByPort objectForKey:@(port)];
@@ -144,14 +157,32 @@ void fetch_latest_audio(mach_port_t port, unsigned packet_id) {
 //        NSLog(@"systemaudio: ike a! sona mi la linja pi ijo %d li lon ala! mi ken ala alasa e kalama!", port);
         return;
     }
-    NSLog(@"systemaudio: linja %d la mi wile jo e kalama lon tenpo nanpa %d a!", ctx->ctxId, packet_id);
+//    NSLog(@"systemaudio: linja %d la mi wile jo e kalama lon tenpo nanpa %d a!", ctx->ctxId, packet_id);
     
     struct buffer_header *header = ctx->buf;
     if (header->ticksInBuffer != 1 / header->not_sure) {
         NSLog(@"systemaudio: ijo li nasa! %.10f %.10f", header->ticksInBuffer, 1/header->not_sure);
     }
-    NSLog(@"systemaudio: linja %d la ijo #1 = %.10f, ijo #2 = %.10f, ijo #3 = %.10f, mute = %d, tenpo #1 = %@, tenpo lon = %@, tenpo pi ijo lete = %@, tenpo pi ijo seli = %@, tenpo lon lon = %f", ctx->ctxId, header->ticksInBuffer, header->not_sure, header->rateScalar, header->samples, toki_e_tenpo(header->unsure), toki_e_tenpo(header->now), toki_e_tenpo(header->inputTime), toki_e_tenpo(header->outputTime), AudioGetCurrentHostTime() / 1000000000.);
+//    NSLog(@"systemaudio: linja %d la ijo #1 = %.10f, ijo #2 = %.10f, ijo #3 = %.10f, mute = %d, tenpo #1 = %@, tenpo lon = %@, tenpo pi ijo lete = %@, tenpo pi ijo seli = %@, tenpo lon lon = %f", ctx->ctxId, header->ticksInBuffer, header->not_sure, header->rateScalar, header->samples, toki_e_tenpo(header->unsure), toki_e_tenpo(header->now), toki_e_tenpo(header->inputTime), toki_e_tenpo(header->outputTime), AudioGetCurrentHostTime() / 1000000000.);
 
+    double sampleRate = 1000000000 / (header->ticksInBuffer / header->rateScalar);
+    if (ctx->sampleRate == 0)
+        ctx->sampleRate = sampleRate;
+    else if (fabs(ctx->sampleRate - sampleRate) > 0.1) {
+        NSLog(@"systemaudio: linja %d la mute tenpo li ante tan %.30f tawa %.30f la mi ala", ctx->ctxId, ctx->sampleRate, sampleRate);
+        return;
+    }
+    uint32_t *outputArr = (uint32_t *) (ctx->buf + PAGE_SIZE) + 1;
+    uint32_t *inputArr = outputArr + outputArr[-1] + 1;
+    uintptr_t bufferAddr = ((uintptr_t) (inputArr + inputArr[-1]) + PAGE_SIZE - 1) & ~(PAGE_SIZE-1);
+    uint32_t bufferSize = outputArr[0];
+    Float32 *bufFloats = (void *) bufferAddr;
+    Float32 avg = 0;
+    for (int i = 0; i < bufferSize / sizeof(Float32); i++) {
+        avg += bufFloats[i] / (bufferSize/sizeof(Float32));
+    }
+//    NSLog(@"systemaudio: linja %d la mute tenpo li %f, mute linja li %d, mute nanpa li %d, ma nanpa li %p, suli ma li %#x suli kalama li %f", ctx->ctxId, sampleRate, ctx->stream0Channels, header->samples, (void *) bufferAddr, bufferSize, avg);
+    
     bool input_running = is_input_running();
     bool ring_active = ctx->ring_active;
     if (input_running && !ring_active) {
@@ -164,19 +195,6 @@ void fetch_latest_audio(mach_port_t port, unsigned packet_id) {
     if (!ring_active)
         return;
 
-    double sampleRate = 1000000000 / (header->ticksInBuffer / header->rateScalar);
-    if (ctx->sampleRate == 0)
-        ctx->sampleRate = sampleRate;
-    else if (ctx->sampleRate != sampleRate) {
-        NSLog(@"systemaudio: linja %d la mute tenpo li ante tan %f tawa %f la mi ala", ctx->ctxId, ctx->sampleRate, sampleRate);
-        return;
-    }
-    uint32_t *outputArr = (uint32_t *) (ctx->buf + PAGE_SIZE) + 1;
-    uint32_t *inputArr = outputArr + outputArr[-1] + 1;
-    uintptr_t bufferAddr = ((uintptr_t) (inputArr + inputArr[-1]) + PAGE_SIZE - 1) & ~(PAGE_SIZE-1);
-    uint32_t bufferSize = outputArr[0];
-    NSLog(@"systemaudio: linja %d la mute tenpo li %f, mute linja li %d, mute nanpa li %d, ma nanpa li %p, suli ma li %#x", ctx->ctxId, sampleRate, ctx->stream0Channels, header->samples, (void *) bufferAddr, bufferSize);
-    
     uint32_t bytesPerFrame = ctx->stream0Channels * sizeof(Float32);
     uint32_t dataSize = header->samples * bytesPerFrame;
     uint32_t extraZeros = (header->outputTime.mSampleTime - ctx->head_sample_time) * bytesPerFrame;
@@ -188,7 +206,7 @@ void fetch_latest_audio(mach_port_t port, unsigned packet_id) {
             extraZeros = availableBytes;
         dataSize = availableBytes - extraZeros;
     }
-    NSLog(@"systemaudio: linja %d mi lukin pana e ijo ala %u e ijo sin %u", ctx->ctxId, extraZeros, dataSize);
+//    NSLog(@"systemaudio: linja %d mi lukin pana e ijo ala %u e ijo sin %u", ctx->ctxId, extraZeros, dataSize);
     dataSize -= dataSize % bytesPerFrame;
     extraZeros -= extraZeros % bytesPerFrame;
     memset(head, 0, extraZeros);
