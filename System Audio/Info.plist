@@ -18,17 +18,17 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>CFPlugInFactories</key>
+	<dict>
+		<key>89CE312B-03C6-48D2-ACA8-B219B116B0E3</key>
+		<string>SystemAudio_Create</string>
+	</dict>
 	<key>CFPlugInTypes</key>
 	<dict>
 		<key>443ABAB8-E7B3-491A-B985-BEB9187030DB</key>
 		<array>
 			<string>89CE312B-03C6-48D2-ACA8-B219B116B0E3</string>
 		</array>
-	</dict>
-	<key>CFPlugInFactories</key>
-	<dict>
-		<key>89CE312B-03C6-48D2-ACA8-B219B116B0E3</key>
-		<string>SystemAudio_Create</string>
 	</dict>
 </dict>
 </plist>

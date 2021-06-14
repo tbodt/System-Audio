@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "BB034F2C263BAB300000A498"
-               BuildableName = "System Audio.driver"
-               BlueprintName = "System Audio"
+               BuildableName = "SystemAudio.driver"
+               BlueprintName = "SystemAudio"
                ReferencedContainer = "container:System Audio.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -56,8 +56,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "BB034F2C263BAB300000A498"
-            BuildableName = "System Audio.driver"
-            BlueprintName = "System Audio"
+            BuildableName = "SystemAudio.driver"
+            BlueprintName = "SystemAudio"
             ReferencedContainer = "container:System Audio.xcodeproj">
          </BuildableReference>
       </MacroExpansion>

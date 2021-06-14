@@ -158,7 +158,12 @@ void fetch_latest_audio(mach_port_t port, unsigned packet_id) {
         return;
     }
 //    NSLog(@"systemaudio: linja %d la mi wile jo e kalama lon tenpo nanpa %d a!", ctx->ctxId, packet_id);
-    
+
+    // For some reason, Big Sur uses 16k pages for the audio buffer, even on x86.
+    size_t buffer_page_size = PAGE_SIZE;
+    if (@available(macOS 11, *))
+        buffer_page_size = 0x4000;
+
     struct buffer_header *header = ctx->buf;
     if (header->ticksInBuffer != 1 / header->not_sure) {
         NSLog(@"systemaudio: ijo li nasa! %.10f %.10f", header->ticksInBuffer, 1/header->not_sure);
@@ -172,16 +177,16 @@ void fetch_latest_audio(mach_port_t port, unsigned packet_id) {
         NSLog(@"systemaudio: linja %d la mute tenpo li ante tan %.30f tawa %.30f la mi ala", ctx->ctxId, ctx->sampleRate, sampleRate);
         return;
     }
-    uint32_t *outputArr = (uint32_t *) (ctx->buf + PAGE_SIZE) + 1;
+    uint32_t *outputArr = (uint32_t *) (ctx->buf + buffer_page_size) + 1;
     uint32_t *inputArr = outputArr + outputArr[-1] + 1;
-    uintptr_t bufferAddr = ((uintptr_t) (inputArr + inputArr[-1]) + PAGE_SIZE - 1) & ~(PAGE_SIZE-1);
+    void *bufferAddr = ctx->buf + ((((void *) inputArr - ctx->buf) + inputArr[-1] + buffer_page_size - 1) & ~(buffer_page_size-1));
     uint32_t bufferSize = outputArr[0];
-    Float32 *bufFloats = (void *) bufferAddr;
+    Float32 *bufFloats = bufferAddr;
     Float32 avg = 0;
     for (int i = 0; i < bufferSize / sizeof(Float32); i++) {
-        avg += bufFloats[i] / (bufferSize/sizeof(Float32));
+        avg += fabs(bufFloats[i]) / (bufferSize/sizeof(Float32));
     }
-//    NSLog(@"systemaudio: linja %d la mute tenpo li %f, mute linja li %d, mute nanpa li %d, ma nanpa li %p, suli ma li %#x suli kalama li %f", ctx->ctxId, sampleRate, ctx->stream0Channels, header->samples, (void *) bufferAddr, bufferSize, avg);
+//    NSLog(@"systemaudio: linja %d la mute tenpo li %f, mute linja li %d, mute nanpa li %d, ma nanpa li %p, suli ma li %#x, suli kalama li %f", ctx->ctxId, sampleRate, ctx->stream0Channels, header->samples, bufferAddr, bufferSize, avg);
     
     bool input_running = is_input_running();
     bool ring_active = ctx->ring_active;
@@ -206,11 +211,11 @@ void fetch_latest_audio(mach_port_t port, unsigned packet_id) {
             extraZeros = availableBytes;
         dataSize = availableBytes - extraZeros;
     }
-//    NSLog(@"systemaudio: linja %d mi lukin pana e ijo ala %u e ijo sin %u", ctx->ctxId, extraZeros, dataSize);
     dataSize -= dataSize % bytesPerFrame;
     extraZeros -= extraZeros % bytesPerFrame;
+//    NSLog(@"systemaudio: linja %d mi lukin pana e ijo ala %u e ijo sin %u", ctx->ctxId, extraZeros, dataSize);
     memset(head, 0, extraZeros);
-    memcpy(head + extraZeros, (void *) bufferAddr, dataSize);
+    memcpy(head + extraZeros, bufferAddr, dataSize);
     TPCircularBufferProduce(&ctx->ring, extraZeros + dataSize);
     ctx->head_sample_time += (extraZeros + dataSize) / bytesPerFrame;
 }

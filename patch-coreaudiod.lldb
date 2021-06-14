@@ -1,0 +1,4 @@
+platform shell killall -9 coreaudiod
+process attach --name coreaudiod --waitfor
+breakpoint set -n HALS_RemotePlugInRegistrar::Get3rdPartyPlugInLoadMethod -C "expr *(int*)$rip = 0xc3c031" -o true
+continue

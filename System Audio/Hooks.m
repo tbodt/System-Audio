@@ -233,14 +233,16 @@ static mach_msg_return_t hook_mach_msg(mach_msg_header_t *msg, mach_msg_option_t
 
 // interpose without dyld's help
 static int interpose(void *module, void *hook, void *func) {
-    size_t data_size;
-    void *data_seg = getsegmentdata(module, "__DATA", &data_size);
-    if (data_seg == NULL) {
-        NSLog(@"SystemAudio: failed to get __DATA");
+    size_t relro_size;
+    void *relro_seg = getsegmentdata(module, "__DATA_CONST", &relro_size);
+    if (relro_seg == NULL)
+        relro_seg = getsegmentdata(module, "__DATA", &relro_size);
+    if (relro_seg == NULL) {
+        NSLog(@"SystemAudio: failed to get relro segment");
         return 1;
     }
-    void **data_to_search = data_seg;
-    size_t search_size = data_size / sizeof(void *);
+    void **data_to_search = relro_seg;
+    size_t search_size = relro_size / sizeof(void *);
     for (size_t i = 0; i < search_size; i++) {
         if (data_to_search[i] == func) {
             data_to_search[i] = hook;
@@ -254,7 +256,6 @@ static int interpose(void *module, void *hook, void *func) {
 OSStatus initialize_hooks(void *coreaudio_pointer) {
     // first get the mach header for whatever is implementing the host interface, which we hope is the right one
     struct dl_info info = {};
-    // TODO: make the above comment true again
     dladdr(coreaudio_pointer, &info);
     void *coreaudio_mach_header = info.dli_fbase;
     if (coreaudio_mach_header == NULL) {

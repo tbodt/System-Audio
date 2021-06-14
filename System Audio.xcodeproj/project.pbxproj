@@ -17,7 +17,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		BB034F2D263BAB300000A498 /* System Audio.driver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "System Audio.driver"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB034F2D263BAB300000A498 /* SystemAudio.driver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SystemAudio.driver; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB034F30263BAB300000A498 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BB034F37263BABB50000A498 /* SystemAudio.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SystemAudio.m; sourceTree = "<group>"; };
 		BB034F3C263BABCA0000A498 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
@@ -57,7 +57,7 @@
 		BB034F2E263BAB300000A498 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				BB034F2D263BAB300000A498 /* System Audio.driver */,
+				BB034F2D263BAB300000A498 /* SystemAudio.driver */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -90,9 +90,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		BB034F2C263BAB300000A498 /* System Audio */ = {
+		BB034F2C263BAB300000A498 /* SystemAudio */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = BB034F33263BAB300000A498 /* Build configuration list for PBXNativeTarget "System Audio" */;
+			buildConfigurationList = BB034F33263BAB300000A498 /* Build configuration list for PBXNativeTarget "SystemAudio" */;
 			buildPhases = (
 				BB034F29263BAB300000A498 /* Sources */,
 				BB034F2A263BAB300000A498 /* Frameworks */,
@@ -102,9 +102,9 @@
 			);
 			dependencies = (
 			);
-			name = "System Audio";
+			name = SystemAudio;
 			productName = "System Audio";
-			productReference = BB034F2D263BAB300000A498 /* System Audio.driver */;
+			productReference = BB034F2D263BAB300000A498 /* SystemAudio.driver */;
 			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */
@@ -133,7 +133,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				BB034F2C263BAB300000A498 /* System Audio */,
+				BB034F2C263BAB300000A498 /* SystemAudio */,
 			);
 		};
 /* End PBXProject section */
@@ -316,7 +316,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		BB034F33263BAB300000A498 /* Build configuration list for PBXNativeTarget "System Audio" */ = {
+		BB034F33263BAB300000A498 /* Build configuration list for PBXNativeTarget "SystemAudio" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				BB034F34263BAB300000A498 /* Debug */,
