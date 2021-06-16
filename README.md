@@ -14,3 +14,5 @@ sudo xcodebuild install DSTROOT=/ && sudo killall -9 coreaudiod
 ```
 
 Currently only works on Catalina and is broken on Big Sur. Working on a fix.
+
+For testing purposes, it is possible to disable SIP and patch coreaudiod to force the driver to load on Big Sur by running `sudo lldb -b -s patch-coreaudiod.lldb`.
