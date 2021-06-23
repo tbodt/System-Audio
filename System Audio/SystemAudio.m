@@ -380,7 +380,7 @@ static OSStatus SystemAudio_DoIOOperation(AudioServerPlugInDriverRef inDriver, A
             .mNumberBuffers = 1,
             .mBuffers = {
                 {
-                    .mNumberChannels = 2,
+                    .mNumberChannels = inputStreamFormats[0].mFormat.mChannelsPerFrame,
                     .mDataByteSize = wantBytes,
                     .mData = tempBuffer,
                 },
@@ -402,7 +402,7 @@ static OSStatus SystemAudio_DoIOOperation(AudioServerPlugInDriverRef inDriver, A
             NSLog(@"systemaudio: pakala la kalama lili taso li kama tan ilo ante kalama! mi wile e kalama %u li jo e kalama %u", inIOBufferFrameSize, packets);
             return;
         }
-        vDSP_vadd(tempBuffer, 1, ioMainBuffer, 1, ioMainBuffer, 1, packets * ctx->stream0Channels);
+        vDSP_vadd(tempBuffer, 1, ioMainBuffer, 1, ioMainBuffer, 1, packets * converterOut.mBuffers[0].mNumberChannels);
         TPCircularBufferConsume(&ctx->ring, pctx.byte_offset);
     });
     
