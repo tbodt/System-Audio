@@ -1,4 +1,5 @@
-platform shell -s /bin/zsh -- (sleep 3; killall -9 coreaudiod) & disown
+platform shell -s /bin/zsh -- (sleep 1; killall -9 coreaudiod) & disown
 process attach --name coreaudiod --waitfor
-breakpoint set -n HALS_RemotePlugInRegistrar::Get3rdPartyPlugInLoadMethod -C "memory write -s 4 $pc+4 0xd2800000 0xd65f0fff"  -o true
+breakpoint set -n HALS_RemotePlugInRegistrar::Get3rdPartyPlugInLoadMethod -o true
 continue
+memory write -s 4 $pc 0xd2800000 0xd65f03c0
