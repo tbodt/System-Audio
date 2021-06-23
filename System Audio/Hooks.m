@@ -129,11 +129,8 @@ static mach_msg_return_t hook_mig_callback(mach_msg_header_t *msg, mach_msg_head
                 unsigned int also_unsure;
             };
             struct mig_request_System_SetPropertyData_DPlist *req = (void *) msg;
-            NSLog(@"systemaudio: setpropertydatadplist %s", FourCCToCString(req->prop.mSelector));
-            if (req->prop.mSelector == kAudioAggregateDevicePropertyComposition) {
-                NSLog(@"systemaudio: set aggregate comp on %u to %@", req->ctx_id, plist);
+            if (req->prop.mSelector == kAudioAggregateDevicePropertyComposition)
                 handle_context_config(req->ctx_id, plist);
-            }
         } break;
         case 1010011:
             // IOContext_Start
@@ -198,14 +195,6 @@ static mach_msg_return_t hook_mig_callback(mach_msg_header_t *msg, mach_msg_head
             }
             handle_context_stop(req->ctx_id);
         } break;
-        default:;
-            // filter out some boring messages from log spam
-            if (0&&msg->msgh_id != 1010002 /* getobjectinfo */ &&
-                !(msg->msgh_id >= 1010013 && msg->msgh_id <= 1010036) /* property crap 1 */ &&
-                !(msg->msgh_id >= 1010040 && msg->msgh_id <= 1010052) /* property crap 2 */) {
-                NSLog(@"systemaudio: ijo li kama tan mig! %s(%d) size=%d local=%d remote=%d pid=%d %@", stringify_message(msg->msgh_id), msg->msgh_id, msg->msgh_size, msg->msgh_local_port, msg->msgh_remote_port, pid_from_mach_trailer(msg), hexdump(msg, msg->msgh_size));
-                NSLog(@"systemaudio: ijo li tawa tan mig! %s(%d) size=%d local=%d remote=%d pid=%d %@", stringify_message(reply->msgh_id), reply->msgh_id, reply->msgh_size, reply->msgh_local_port, reply->msgh_remote_port, pid_from_mach_trailer(msg), hexdump(reply, reply->msgh_size));
-            }
     }
     return res;
 }

@@ -394,7 +394,8 @@ static OSStatus SystemAudio_DoIOOperation(AudioServerPlugInDriverRef inDriver, A
         };
         OSStatus err = AudioConverterFillComplexBuffer(ctx->converter, ProvideInputDataFromContext, &pctx, &packets, &converterOut, NULL);
         if (err != 0) {
-            NSLog(@"systemaudio: ante kalama li pakala ni: %d", err);
+            if (err != -1)
+                NSLog(@"systemaudio: ante kalama li pakala ni: %d", err);
             return;
         }
         if (packets < inIOBufferFrameSize) {
