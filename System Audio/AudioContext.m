@@ -14,7 +14,6 @@
 static NSLock *contextsLock;
 static NSMutableDictionary<NSNumber *, AudioContext *> *contextsByID;
 static NSMutableDictionary<NSNumber *, AudioContext *> *contextsByPort;
-static NSMutableDictionary<NSNumber *, id> *acom;
 
 @implementation AudioContext
 - (int)openBuffer {
@@ -59,7 +58,6 @@ static NSMutableDictionary<NSNumber *, id> *acom;
     contextsLock = [NSLock new];
     contextsByID = [NSMutableDictionary new];
     contextsByPort = [NSMutableDictionary new];
-    acom = [NSMutableDictionary new];
 }
 + (instancetype)contextById:(unsigned)ctxId {
     AudioContext *ctx = [contextsByID objectForKey:@(ctxId)];
@@ -74,12 +72,6 @@ static NSMutableDictionary<NSNumber *, id> *acom;
     [self closeBuffer];
 }
 @end
-
-void handle_aggregate_composition(unsigned dev, id plist) {
-    [contextsLock lock];
-    acom[plist] = @(dev);
-    [contextsLock unlock];
-}
 
 void handle_context_config(unsigned ctxId, id plist) {
     [contextsLock lock];
@@ -218,6 +210,18 @@ void fetch_latest_audio(mach_port_t port, unsigned packet_id) {
     memcpy(head + extraZeros, bufferAddr, dataSize);
     TPCircularBufferProduce(&ctx->ring, extraZeros + dataSize);
     ctx->head_sample_time += (extraZeros + dataSize) / bytesPerFrame;
+
+#if 0
+    char dump_name[100];
+    snprintf(dump_name, sizeof(dump_name), "/Library/Preferences/Audio/kalama/%d.mu", ctx->ctxId);
+    int fd = open(dump_name, O_WRONLY|O_CREAT|O_APPEND, 0666);
+    if (fd < 0) {
+        NSLog(@"systemaudio: mi ken ala pana tawa lipu lukin tan %s", strerror(errno));
+        return;
+    }
+    write(fd, bufferAddr, dataSize);
+    close(fd);
+#endif
 }
 
 void enumerate_contexts(void (^cb)(AudioContext *ctx)) {
