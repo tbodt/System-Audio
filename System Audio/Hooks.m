@@ -234,7 +234,9 @@ static mach_msg_return_t hook_mach_msg(mach_msg_header_t *msg, mach_msg_option_t
 // interpose without dyld's help
 static int interpose(void *module, void *hook, void *func) {
     size_t relro_size;
-    void *relro_seg = getsegmentdata(module, "__DATA_CONST", &relro_size);
+    void *relro_seg = getsegmentdata(module, "__AUTH_CONST", &relro_size);
+    if (relro_seg == NULL)
+        relro_seg = getsegmentdata(module, "__DATA_CONST", &relro_size);
     if (relro_seg == NULL)
         relro_seg = getsegmentdata(module, "__DATA", &relro_size);
     if (relro_seg == NULL) {
