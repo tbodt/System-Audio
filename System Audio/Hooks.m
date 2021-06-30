@@ -109,7 +109,7 @@ static mach_msg_return_t hook_mig_callback(mach_msg_header_t *msg, mach_msg_head
                 break;
             }
             NSLog(@"systemaudio: linja sin li kama! id=%d, pid=%d, sona=%@", resp->ctx_id, pid_from_mach_trailer(msg), plist);
-            handle_context_config(resp->ctx_id, plist);
+            handle_context_config(resp->ctx_id, plist, pid_from_mach_trailer(msg));
         } break;
         case 1010034: {
             // example request:
@@ -130,7 +130,7 @@ static mach_msg_return_t hook_mig_callback(mach_msg_header_t *msg, mach_msg_head
             };
             struct mig_request_System_SetPropertyData_DPlist *req = (void *) msg;
             if (req->prop.mSelector == kAudioAggregateDevicePropertyComposition)
-                handle_context_config(req->ctx_id, plist);
+                handle_context_config(req->ctx_id, plist, pid_from_mach_trailer(msg));
         } break;
         case 1010011:
             // IOContext_Start

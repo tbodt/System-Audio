@@ -82,7 +82,7 @@ static HRESULT SystemAudio_QueryInterface(void *inDriver, REFIID inUUID, LPVOID 
     return E_NOINTERFACE;
 }
 
-static Float64 mach_ticks_per_second;
+Float64 mach_ticks_per_second;
 static const int sample_rate = 48000;
 static const int frames_per_zero_timestamp = 16384;
 
@@ -403,6 +403,7 @@ static OSStatus SystemAudio_DoIOOperation(AudioServerPlugInDriverRef inDriver, A
             return;
         }
         vDSP_vadd(tempBuffer, 1, ioMainBuffer, 1, ioMainBuffer, 1, packets * converterOut.mBuffers[0].mNumberChannels);
+//        NSLog(@"systemaudio: mi weka e ijo %d tan sike %p", pctx.byte_offset, &ctx->ring);
         TPCircularBufferConsume(&ctx->ring, pctx.byte_offset);
     });
     

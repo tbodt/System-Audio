@@ -23,6 +23,7 @@ __BEGIN_DECLS
     mach_port_t serverPort;
     int stream0Channels;
     double sampleRate;
+    bool processIsTranslated;
 
     int shm_fd;
     void *buf;
@@ -37,8 +38,7 @@ __BEGIN_DECLS
 }
 @end
 
-void handle_aggregate_composition(unsigned dev, id plist);
-void handle_context_config(unsigned ctx, id plist);
+void handle_context_config(unsigned ctx, id plist, int pid);
 void handle_context_start(unsigned ctx, mach_port_t client, mach_port_t server);
 void handle_context_stop(unsigned ctx);
 void fetch_latest_audio(mach_port_t client_port, unsigned packet_id);

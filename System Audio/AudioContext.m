@@ -7,6 +7,7 @@
 
 #import <CoreAudio/CoreAudio.h>
 #import <AudioToolbox/AudioToolbox.h>
+#import <sys/sysctl.h>
 #import <sys/stat.h>
 #import "SystemAudio.h"
 #import "AudioContext.h"
@@ -73,11 +74,21 @@ static NSMutableDictionary<NSNumber *, AudioContext *> *contextsByPort;
 }
 @end
 
-void handle_context_config(unsigned ctxId, id plist) {
+void handle_context_config(unsigned ctxId, id plist, int pid) {
     [contextsLock lock];
     AudioContext *ctx = [AudioContext contextById:ctxId];
     ctx->config = plist;
     ctx->stream0Channels = [plist[@"grid-out"][0][@"channels"] intValue];
+    int sysctl_name[] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
+    struct kinfo_proc proc_info;
+    size_t proc_info_size = sizeof(proc_info);
+    int err = sysctl(sysctl_name, sizeof(sysctl_name)/sizeof(sysctl_name[0]), &proc_info, &proc_info_size, NULL, 0);
+    if (err < 0) {
+        NSLog(@"systemaudio: mi wile sona e ni: ijo li kepeken ala kepeken ilo Rosetta? ni li pakala: %s", strerror(errno));
+    } else {
+        ctx->processIsTranslated = proc_info.kp_proc.p_flag & P_TRANSLATED ? true : false;
+        NSLog(@"systemaudio: linja %d la ijo %d li kepeken ala kepeken ilo rosetta? %d", ctxId, pid, ctx->processIsTranslated);
+    }
     [contextsLock unlock];
 }
 
@@ -156,13 +167,17 @@ void fetch_latest_audio(mach_port_t port, unsigned packet_id) {
     if (@available(macOS 11, *))
         buffer_page_size = 0x4000;
 
+    Float32 ticks_per_second = mach_ticks_per_second;
+    if (ctx->processIsTranslated)
+        ticks_per_second = 1000000000.;
+
     struct buffer_header *header = ctx->buf;
     if (header->ticksInBuffer != 1 / header->not_sure) {
-        NSLog(@"systemaudio: ijo li nasa! %.10f %.10f", header->ticksInBuffer, 1/header->not_sure);
+        NSLog(@"systemaudio: ijo li nasa! %.16f %.16f", header->ticksInBuffer, 1/header->not_sure);
     }
-//    NSLog(@"systemaudio: linja %d la ijo #1 = %.10f, ijo #2 = %.10f, ijo #3 = %.10f, mute = %d, tenpo #1 = %@, tenpo lon = %@, tenpo pi ijo lete = %@, tenpo pi ijo seli = %@, tenpo lon lon = %f", ctx->ctxId, header->ticksInBuffer, header->not_sure, header->rateScalar, header->samples, toki_e_tenpo(header->unsure), toki_e_tenpo(header->now), toki_e_tenpo(header->inputTime), toki_e_tenpo(header->outputTime), AudioGetCurrentHostTime() / 1000000000.);
+//    NSLog(@"systemaudio: linja %d la ijo #1 = %.10f, ijo #2 = %.10f, ijo #3 = %.10f, mute = %d, tenpo #1 = %@, tenpo lon = %@, tenpo pi ijo lete = %@, tenpo pi ijo seli = %@, tenpo lon lon = %f", ctx->ctxId, header->ticksInBuffer, header->not_sure, header->rateScalar, header->samples, toki_e_tenpo(header->unsure), toki_e_tenpo(header->now), toki_e_tenpo(header->inputTime), toki_e_tenpo(header->outputTime), AudioGetCurrentHostTime() / mach_ticks_per_second);
 
-    double sampleRate = 1000000000 / (header->ticksInBuffer / header->rateScalar);
+    double sampleRate = ticks_per_second / (header->ticksInBuffer / header->rateScalar);
     if (ctx->sampleRate == 0)
         ctx->sampleRate = sampleRate;
     else if (fabs(ctx->sampleRate - sampleRate) > 0.1) {
@@ -205,7 +220,7 @@ void fetch_latest_audio(mach_port_t port, unsigned packet_id) {
     }
     dataSize -= dataSize % bytesPerFrame;
     extraZeros -= extraZeros % bytesPerFrame;
-//    NSLog(@"systemaudio: linja %d mi lukin pana e ijo ala %u e ijo sin %u", ctx->ctxId, extraZeros, dataSize);
+//    NSLog(@"systemaudio: linja %d mi lukin pana e ijo ala %u e ijo sin %u tawa sike %p", ctx->ctxId, extraZeros, dataSize, &ctx->ring);
     memset(head, 0, extraZeros);
     memcpy(head + extraZeros, bufferAddr, dataSize);
     TPCircularBufferProduce(&ctx->ring, extraZeros + dataSize);
