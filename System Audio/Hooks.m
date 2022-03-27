@@ -220,6 +220,17 @@ static mach_msg_return_t hook_mach_msg(mach_msg_header_t *msg, mach_msg_option_t
     return res;
 }
 
+static void unprotect_mem(void *mem, size_t size) {
+    uintptr_t mem_int = (uintptr_t) mem;
+    size_t offset = mem_int % PAGE_SIZE;
+    mem_int -= offset;
+    size += offset;
+    mem = (void *) mem_int;
+    int err = mprotect(mem, size, PROT_READ|PROT_WRITE);
+    if (err < 0)
+        NSLog(@"SystemAudio: failed to unprotect memory at %p+%#lx", mem, (unsigned long) size);
+}
+
 // interpose without dyld's help
 static int interpose(void *module, void *hook, void *func) {
     size_t relro_size;
@@ -236,6 +247,7 @@ static int interpose(void *module, void *hook, void *func) {
     size_t search_size = relro_size / sizeof(void *);
     for (size_t i = 0; i < search_size; i++) {
         if (data_to_search[i] == func) {
+            unprotect_mem(&data_to_search[i], sizeof(data_to_search[i]));
             data_to_search[i] = hook;
             return 0;
         }

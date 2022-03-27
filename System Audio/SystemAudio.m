@@ -352,7 +352,8 @@ static OSStatus SystemAudio_DoIOOperation(AudioServerPlugInDriverRef inDriver, A
     if (tempBufferSize < wantBytes) {
         NSLog(@"systemaudio: mi suli %u e lipu pi tenpo lili", wantBytes);
         tempBufferSize = wantBytes;
-        munmap(tempBuffer, tempBufferSize);
+        if (tempBuffer != NULL)
+            munmap(tempBuffer, tempBufferSize);
         tempBuffer = mmap(NULL, tempBufferSize, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
     }
     
