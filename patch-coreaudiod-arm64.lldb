@@ -1,4 +1,4 @@
-platform shell -s /bin/zsh -- (sleep 1; killall -9 coreaudiod) & disown
+platform shell -s /bin/zsh -- /bin/zsh -c '(sleep 1; killall -9 coreaudiod) & disown'
 process attach --name coreaudiod --waitfor
 breakpoint set -n HALS_RemotePlugInRegistrar::Get3rdPartyPlugInLoadMethod -o true
 continue
